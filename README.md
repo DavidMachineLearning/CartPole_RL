@@ -6,5 +6,7 @@ A pole is attached by an un-actuated joint to a cart, which moves along a fricti
 
 ### Files:
 - CartPole.ipybn   Jupyter notebook with entire process
+- KerasDQN.py      Python file containing an easy to use structure (keras version) Very similar to https://github.com/keon/deep-q-learning
+- TFDQN.py         Python file containing an easy to use structure (Tensorflow version)
 - cartpole.mp4     mp4 video of the trained model
 - cartpole.mkv     mkv video of the trained model
