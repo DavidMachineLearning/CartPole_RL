@@ -6,9 +6,31 @@ import random
 import gym
 
 
+def fully_connected(name, input_tensor, num_units, activation=tf.nn.relu):
+    """Returns a fully connected layer"""
+    # initialize weights
+    w = tf.compat.v1.get_variable(f"W_{name}", shape=[input_tensor.get_shape()[1], num_units],
+                                  initializer=tf.compat.v1.initializers.he_uniform(),
+                                  dtype=tf.float32, trainable=True)
+    # initialize bias
+    b = tf.compat.v1.get_variable(f"B_{name}", shape=[num_units],
+                                  initializer=tf.constant_initializer(0.0),
+                                  dtype=tf.float32,
+                                  trainable=True)
+    # output
+    out = tf.matmul(input_tensor, w) + b
+    # add activation
+    if activation:
+        out = activation(out, name=f"activation_{name}")
+    # change name
+    out = tf.compat.v1.identity(out, name=name)
+
+    return out
+
+
 class DQNAgent:
     """Class providing DQN algorithm based on tensorflow"""
-    def __init__(self, state_size, action_size, name, gamma=1.0, epsilon_start=1.0, epsilon_decay=0.0001,
+    def __init__(self, state_size, action_size, name, gamma=1.0, epsilon_start=1.0, epsilon_decay=0.0002,
                  epsilon_min=0.01, memorysize=100000, learning_rate=0.0001, n_Hlayers=2, n_nodes=64):
         self.state_size = state_size
         self.action_size = action_size
@@ -30,11 +52,10 @@ class DQNAgent:
             one_hot_actions = tf.one_hot(self.actions_, self.action_size)
             self.targetQs_ = tf.placeholder(tf.float32, [None], name='target')
             self.layers = list()
-            self.layers.append(tf.contrib.layers.fully_connected(self.inputs_, nodes))
+            self.layers.append(fully_connected("hidden1", self.inputs_, nodes))
             for layer in range(hidden_layers):
-                self.layers.append(tf.contrib.layers.fully_connected(self.layers[layer], nodes))
-            self.output = tf.contrib.layers.fully_connected(self.layers[-1], self.action_size, 
-                                                            activation_fn=None)
+                self.layers.append(fully_connected(f"hidden{layer+2}", self.layers[layer], nodes))
+            self.output = fully_connected("output", self.layers[-1], self.action_size, activation=None)
             self.Q = tf.reduce_sum(tf.multiply(self.output, one_hot_actions), axis=1)
             self.loss = tf.reduce_mean(tf.square(self.targetQs_ - self.Q))
             self.opt = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
@@ -96,7 +117,7 @@ def collect_experience(env_, agent_, size):
         action = env_.action_space.sample()
         next_state, reward, done, _ = env_.step(action)
         # penalize reward based on the position of the cart
-        reward = reward * (1 - abs(next_state[1]/2.4))
+        reward = max(0, reward * (1 - abs(next_state[1]/2.4)))
         if done:
             next_state = np.zeros(state.shape)
             # save experience in agent's memory
@@ -126,7 +147,7 @@ if __name__ == "__main__":
     max_steps = 500
     with tf.Session() as sess:
         # Initialize variables
-        sess.run(tf.global_variables_initializer())
+        sess.run(tf.compat.v1.global_variables_initializer())
         step = 0
         state = env.reset()
         for ep in range(1, train_episodes):
@@ -140,7 +161,7 @@ if __name__ == "__main__":
                 next_state, reward, done, _ = env.step(action)
 
                 # penalize reward based on the position of the cart
-                reward = reward * (1 - abs(next_state[1]/2.4))
+                reward = max(0, reward * (1 - abs(next_state[1]/2.4)))
 
                 # collect total reward
                 total_reward += reward
@@ -152,7 +173,6 @@ if __name__ == "__main__":
                     
                     print('Episode: {}'.format(ep),
                           'Total reward: {}'.format(total_reward),
-                          'Training loss: {:.4f}'.format(loss),
                           'Explore P: {:.4f}'.format(agent.epsilon))
 
                     # Add reward to list

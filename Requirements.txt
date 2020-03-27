@@ -1,0 +1,5 @@
+numpy=1.16.4
+matplotlib=3.2.1
+tensorflow-gpu=1.14.0
+jupyter=1.0.0
+gym=0.17.1

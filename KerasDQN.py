@@ -1,7 +1,7 @@
 from collections import deque
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.optimizers import Adam
+from tensorflow.python.keras.models import Sequential
+from tensorflow.python.keras.layers import Dense
+from tensorflow.python.keras.optimizers import Adam
 from time import sleep
 import numpy as np
 import random
@@ -10,7 +10,7 @@ import gym
 
 class DQNAgent:
     """Class providing DQN algorithm based on keras"""
-    def __init__(self, state_size, action_size, gamma=1.0, epsilon_start=1.0, epsilon_decay=0.0001,
+    def __init__(self, state_size, action_size, gamma=1.0, epsilon_start=1.0, epsilon_decay=0.0002,
                  epsilon_min=0.01, memorysize=100000, learning_rate=0.0001, n_Hlayers=2, n_nodes=64):
         self.state_size = state_size
         self.action_size = action_size
@@ -78,7 +78,7 @@ def collect_experience(env_, agent_, size):
         action = env_.action_space.sample()
         next_state, reward, done, _ = env_.step(action)
         # penalize reward based on the position of the cart
-        reward = reward * (1 - abs(next_state[1]/2.4))
+        reward = max(0, reward * (1 - abs(next_state[1]/2.4)))
         # reshape states
         state = np.reshape(state, [1, 4])
         next_state = np.reshape(next_state, [1, 4])
@@ -111,14 +111,14 @@ if __name__ == "__main__":
         # change state shape
         state = np.reshape(state, [1, 4])
         
-        score=0
+        score = 0
         for time_t in range(max_steps):
             # Take action, get new state and reward
             action = agent.act(state)
             next_state, reward, done, _ = env.step(action)
             
             # adjust reward, gets bigger reward if cart stays in the center
-            reward = reward * (1 - abs(next_state[1]/2.4))
+            reward = max(0, reward * (1 - abs(next_state[1]/2.4)))
 
             # collect total reward
             score += reward
