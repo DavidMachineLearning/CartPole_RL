@@ -117,7 +117,7 @@ def collect_experience(env_, agent_, size):
         action = env_.action_space.sample()
         next_state, reward, done, _ = env_.step(action)
         # penalize reward based on the position of the cart
-        reward = max(0, reward * (1 - abs(next_state[1]/2.4)))
+        reward = max(0, reward * (1 - abs(next_state[0]/2.4)))
         if done:
             next_state = np.zeros(state.shape)
             # save experience in agent's memory
@@ -161,7 +161,7 @@ if __name__ == "__main__":
                 next_state, reward, done, _ = env.step(action)
 
                 # penalize reward based on the position of the cart
-                reward = max(0, reward * (1 - abs(next_state[1]/2.4)))
+                reward = max(0, reward * (1 - abs(next_state[0]/2.4)))
 
                 # collect total reward
                 total_reward += reward
